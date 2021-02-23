@@ -1,24 +1,143 @@
-const express = require('express')
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
+const Contacts = require("../../model/contacts");
 
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/", async (_req, res, next) => {
+  try {
+    const contacts = await Contacts.listContacts();
+    return res.json({
+      status: "success",
+      code: 200,
+      data: {
+        contacts,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/:id", async (req, res, next) => {
+  try {
+    const contact = await Contacts.getContactById(req.params.id);
+    if (contact) {
+      return res.json({
+        status: "success",
+        code: 200,
+        data: {
+          contact,
+        },
+      });
+    } else {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        data: "Not Found",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.post("/", async (req, res, next) => {
+  try {
+    const { email, name, number } = req.body;
+    if (email && name && number) {
+      await Contacts.addContact(req.body);
+      return res.status(201).json({
+        status: "success",
+        code: 201,
+        data: {
+          email,
+          name,
+          number,
+        },
+      });
+    } else {
+      return res.status(400).json({
+        status: "error",
+        code: 400,
+        data: { message: "missing required name field" },
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const contact = await Contacts.removeContact(req.params.id);
+    if (contact) {
+      return res.json({
+        status: "success",
+        code: 200,
+        data: { message: "contact deleted" },
+      });
+    } else {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        data: "Not Found",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.patch('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.put("/:id", async (req, res, next) => {
+  try {
+    const { name, email, number } = await Contacts.updateContact(
+      req.params.id,
+      req.body
+    );
 
-module.exports = router
+    if (name || email || number) {
+      return res.json({
+        status: "success",
+        code: 200,
+        data: {
+          name,
+          email,
+          number,
+        },
+      });
+    } else {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        data: "Not Found",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/:id/number", async (req, res, next) => {
+  try {
+    const { number } = await Contacts.updateContact(req.params.id, req.body);
+
+    if (number) {
+      return res.json({
+        status: "success",
+        code: 200,
+        data: {
+          number,
+        },
+      });
+    } else {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        data: "Not Found",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
